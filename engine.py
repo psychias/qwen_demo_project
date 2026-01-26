@@ -7,13 +7,15 @@ A simple FastAPI server for serving the Qwen/Qwen1.5-4B model with streaming sup
 import asyncio
 import json
 import logging
+import os
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
 import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 from threading import Thread
@@ -23,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Model configuration
-MODEL_ID = "Qwen/Qwen1.5-0.5B" 
+MODEL_ID = "Qwen/Qwen1.5-0.5B"  # Using Chat variant for better conversational ability
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TORCH_DTYPE = torch.float16 if torch.cuda.is_available() else torch.float32
 
@@ -94,7 +96,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="Qwen Chat Engine",
-    description="API for Qwen1.5-0.5B",
+    description="API for Qwen1.5-4B Chat model",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -211,9 +213,9 @@ async def chat_completions(request: ChatCompletionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/")
-async def root():
-    """Root endpoint with API information."""
+@app.get("/api")
+async def api_info():
+    """API information endpoint."""
     return {
         "name": "Qwen Chat Engine",
         "model": MODEL_ID,
@@ -224,11 +226,24 @@ async def root():
     }
 
 
+@app.get("/")
+async def serve_frontend():
+    """Serve the frontend HTML file."""
+    # Look for index.html in the same directory as this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    index_path = os.path.join(script_dir, "index.html")
+    
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    else:
+        return {"error": "index.html not found", "looked_in": script_dir}
+
+
 if __name__ == "__main__":
     import uvicorn
     
     print("=" * 60)
-    print("Qwen1.5-0.5B Chat Engine")
+    print("Qwen1.5-0.5B Engine")
     print("=" * 60)
     print(f"Model: {MODEL_ID}")
     print(f"Device: {DEVICE}")
