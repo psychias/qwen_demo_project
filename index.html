@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NanoChat - Qwen1.5-4B</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body{
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #ffffff;
+            color: #111827;
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-logo {
+            height: 32px;
+            width: auto;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            color: #111827;
+        }
+
+        .header h1 span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #6b7280;
+            margin-left: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #9ca3af;
+            margin-left: auto;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-indicator.connected {
+            background-color: #22c55e;
+        }
+
+        .status-indicator.error {
+            background-color: #ef4444;
+        }
+
+        .new-conversation-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            color: #6b7280;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .new-conversation-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #ffffff;
+        }
+
+        .chat-wrapper {
+            max-width: 48rem;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6b7280;
+        }
+
+        .welcome-message h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-message p {
+            margin: 0.25rem 0;
+        }
+
+        .message {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 0.5rem;
+            color: #0d0d0d;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-width: 100%;
+        }
+
+        .message.assistant .message-content {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin-left: -0.5rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .message.assistant .message-content:hover {
+            background-color: #f9fafb;
+        }
+
+        .message.user .message-content {
+            background-color: #f3f4f6;
+            border-radius: 1.25rem;
+            padding: 0.8rem 1rem;
+            max-width: 65%;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .message.user .message-content:hover {
+            background-color: #e5e7eb;
+        }
+
+        .message.console .message-content {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+            font-size: 0.875rem;
+            background-color: #fafafa;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            max-width: 80%;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .input-container {
+            background-color: #ffffff;
+            padding: 1rem;
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .input-wrapper {
+            max-width: 48rem;
+            margin: 0 auto;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            background-color: #ffffff;
+            color: #111827;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            min-height: 54px;
+            max-height: 200px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .chat-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .chat-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .chat-input:disabled {
+            background-color: #f9fafb;
+            cursor: not-allowed;
+        }
+
+        .send-button {
+            flex-shrink: 0;
+            padding: 0;
+            width: 54px;
+            height: 54px;
+            border: 1px solid #111827;
+            border-radius: 0.75rem;
+            background-color: #111827;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+
+        .send-button:disabled {
+            cursor: not-allowed;
+            border-color: #d1d5db;
+            background-color: #e5e7eb;
+            color: #9ca3af;
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            color: #6b7280;
+            letter-spacing: 0.15em;
+        }
+
+        .typing-indicator::after {
+            content: '···';
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.2; }
+            30% { opacity: 1; }
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <button class="new-conversation-btn" onclick="newConversation()" title="New Conversation (Ctrl+Shift+N)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                </svg>
+            </button>
+            <h1>NanoChat <span>Qwen1.5-4B</span></h1>
+            <div class="status-indicator" id="statusIndicator" title="Disconnected"></div>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-wrapper" id="chatWrapper">
+            <div class="welcome-message" id="welcomeMessage">
+                <h2>👋 Welcome to your own custom LLM</h2>
+                <p>Powered by Qwen1.5-0.5B</p>
+                <p style="font-size: 0.875rem; margin-top: 1rem;">Type a message to start chatting, or use /help for commands</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper">
+            <textarea
+                id="chatInput"
+                class="chat-input"
+                placeholder="Ask anything..."
+                rows="1"
+                onkeydown="handleKeyDown(event)"
+            ></textarea>
+            <button id="sendButton" class="send-button" onclick="sendMessage()" disabled>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2L11 13"></path>
+                    <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - Update this to match your server
+        // ============================================
+        const API_URL = 'http://localhost:8000';
+        
+        // ============================================
+        // DOM Elements
+        // ============================================
+        const chatContainer = document.getElementById('chatContainer');
+        const chatWrapper = document.getElementById('chatWrapper');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+
+        // ============================================
+        // State
+        // ============================================
+        let messages = [];
+        let isGenerating = false;
+        let currentTemperature = 0.8;
+        let currentTopK = 50;
+        let currentTopP = 0.9;
+        let currentMaxTokens = 512;
+        let isConnected = false;
+
+        // ============================================
+        // Utility Functions
+        // ============================================
+        function updateStatus(connected, title = '') {
+            isConnected = connected;
+            statusIndicator.classList.remove('connected', 'error');
+            if (connected) {
+                statusIndicator.classList.add('connected');
+                statusIndicator.title = title || 'Connected';
+            } else {
+                statusIndicator.classList.add('error');
+                statusIndicator.title = title || 'Disconnected';
+            }
+        }
+
+        function hideWelcomeMessage() {
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // Input Handling
+        // ============================================
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            sendButton.disabled = !this.value.trim() || isGenerating || !isConnected;
+        });
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // Ctrl+Shift+N for new conversation
+            if (event.ctrlKey && event.shiftKey && event.key === 'N') {
+                event.preventDefault();
+                if (!isGenerating) {
+                    newConversation();
+                }
+            }
+        });
+
+        // ============================================
+        // Conversation Management
+        // ============================================
+        function newConversation() {
+            messages = [];
+            chatWrapper.innerHTML = '';
+            if (welcomeMessage) {
+                chatWrapper.appendChild(welcomeMessage);
+                welcomeMessage.style.display = 'block';
+            }
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            sendButton.disabled = !isConnected;
+            isGenerating = false;
+            chatInput.focus();
+        }
+
+        function addMessage(role, content, messageIndex = null) {
+            hideWelcomeMessage();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+
+            // Add click handler for user messages to enable editing
+            if (role === 'user' && messageIndex !== null) {
+                contentDiv.setAttribute('data-message-index', messageIndex);
+                contentDiv.setAttribute('title', 'Click to edit and restart from here');
+                contentDiv.addEventListener('click', function() {
+                    if (!isGenerating) {
+                        editMessage(messageIndex);
+                    }
+                });
+            }
+
+            // Add click handler for assistant messages to enable regeneration
+            if (role === 'assistant' && messageIndex !== null) {
+                contentDiv.setAttribute('data-message-index', messageIndex);
+                contentDiv.setAttribute('title', 'Click to regenerate this response');
+                contentDiv.addEventListener('click', function() {
+                    if (!isGenerating) {
+                        regenerateMessage(messageIndex);
+                    }
+                });
+            }
+
+            messageDiv.appendChild(contentDiv);
+            chatWrapper.appendChild(messageDiv);
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return contentDiv;
+        }
+
+        function editMessage(messageIndex) {
+            if (messageIndex < 0 || messageIndex >= messages.length) return;
+
+            const messageToEdit = messages[messageIndex];
+            if (messageToEdit.role !== 'user') return;
+
+            chatInput.value = messageToEdit.content;
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 200) + 'px';
+
+            messages = messages.slice(0, messageIndex);
+
+            const allMessages = chatWrapper.querySelectorAll('.message');
+            for (let i = messageIndex; i < allMessages.length; i++) {
+                allMessages[i].remove();
+            }
+
+            sendButton.disabled = false;
+            chatInput.focus();
+        }
+
+        // ============================================
+        // API Communication
+        // ============================================
+        async function generateAssistantResponse() {
+            isGenerating = true;
+            sendButton.disabled = true;
+
+            const assistantContent = addMessage('assistant', '');
+            assistantContent.innerHTML = '<span class="typing-indicator"></span>';
+
+            try {
+                const response = await fetch(`${API_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: messages,
+                        temperature: currentTemperature,
+                        top_k: currentTopK,
+                        top_p: currentTopP,
+                        max_tokens: currentMaxTokens,
+                        stream: true
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                assistantContent.textContent = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.slice(6);
+                            if (dataStr === '[DONE]') continue;
+                            
+                            try {
+                                const data = JSON.parse(dataStr);
+                                if (data.token) {
+                                    fullResponse += data.token;
+                                    assistantContent.textContent = fullResponse;
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                            } catch (e) {
+                                // Ignore JSON parse errors for incomplete chunks
+                            }
+                        }
+                    }
+                }
+
+                const assistantMessageIndex = messages.length;
+                messages.push({ role: 'assistant', content: fullResponse });
+
+                assistantContent.setAttribute('data-message-index', assistantMessageIndex);
+                assistantContent.setAttribute('title', 'Click to regenerate this response');
+                assistantContent.addEventListener('click', function() {
+                    if (!isGenerating) {
+                        regenerateMessage(assistantMessageIndex);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                assistantContent.innerHTML = `<div class="error-message">Error: ${error.message}. Make sure the engine is running.</div>`;
+            } finally {
+                isGenerating = false;
+                sendButton.disabled = !chatInput.value.trim() || !isConnected;
+            }
+        }
+
+        async function regenerateMessage(messageIndex) {
+            if (messageIndex < 0 || messageIndex >= messages.length) return;
+
+            const messageToRegenerate = messages[messageIndex];
+            if (messageToRegenerate.role !== 'assistant') return;
+
+            messages = messages.slice(0, messageIndex);
+
+            const allMessages = chatWrapper.querySelectorAll('.message');
+            for (let i = messageIndex; i < allMessages.length; i++) {
+                allMessages[i].remove();
+            }
+
+            await generateAssistantResponse();
+        }
+
+        // ============================================
+        // Slash Commands
+        // ============================================
+        function handleSlashCommand(command) {
+            const parts = command.trim().split(/\s+/);
+            const cmd = parts[0].toLowerCase();
+            const arg = parts[1];
+
+            hideWelcomeMessage();
+
+            if (cmd === '/temperature' || cmd === '/temp') {
+                if (arg === undefined) {
+                    addMessage('console', `Current temperature: ${currentTemperature}`);
+                } else {
+                    const temp = parseFloat(arg);
+                    if (isNaN(temp) || temp < 0 || temp > 2) {
+                        addMessage('console', 'Invalid temperature. Must be between 0.0 and 2.0');
+                    } else {
+                        currentTemperature = temp;
+                        addMessage('console', `Temperature set to ${currentTemperature}`);
+                    }
+                }
+                return true;
+            } else if (cmd === '/topk') {
+                if (arg === undefined) {
+                    addMessage('console', `Current top-k: ${currentTopK}`);
+                } else {
+                    const topk = parseInt(arg);
+                    if (isNaN(topk) || topk < 1 || topk > 200) {
+                        addMessage('console', 'Invalid top-k. Must be between 1 and 200');
+                    } else {
+                        currentTopK = topk;
+                        addMessage('console', `Top-k set to ${currentTopK}`);
+                    }
+                }
+                return true;
+            } else if (cmd === '/topp') {
+                if (arg === undefined) {
+                    addMessage('console', `Current top-p: ${currentTopP}`);
+                } else {
+                    const topp = parseFloat(arg);
+                    if (isNaN(topp) || topp < 0 || topp > 1) {
+                        addMessage('console', 'Invalid top-p. Must be between 0.0 and 1.0');
+                    } else {
+                        currentTopP = topp;
+                        addMessage('console', `Top-p set to ${currentTopP}`);
+                    }
+                }
+                return true;
+            } else if (cmd === '/maxtokens' || cmd === '/tokens') {
+                if (arg === undefined) {
+                    addMessage('console', `Current max tokens: ${currentMaxTokens}`);
+                } else {
+                    const tokens = parseInt(arg);
+                    if (isNaN(tokens) || tokens < 1 || tokens > 4096) {
+                        addMessage('console', 'Invalid max tokens. Must be between 1 and 4096');
+                    } else {
+                        currentMaxTokens = tokens;
+                        addMessage('console', `Max tokens set to ${currentMaxTokens}`);
+                    }
+                }
+                return true;
+            } else if (cmd === '/settings' || cmd === '/config') {
+                addMessage('console',
+                    `Current settings:\n` +
+                    `  temperature: ${currentTemperature}\n` +
+                    `  top-k: ${currentTopK}\n` +
+                    `  top-p: ${currentTopP}\n` +
+                    `  max_tokens: ${currentMaxTokens}`
+                );
+                return true;
+            } else if (cmd === '/clear') {
+                newConversation();
+                return true;
+            } else if (cmd === '/help') {
+                addMessage('console',
+                    'Available commands:\n' +
+                    '/temperature [value] - Get/set temperature (0.0-2.0)\n' +
+                    '/topk [value] - Get/set top-k (1-200)\n' +
+                    '/topp [value] - Get/set top-p (0.0-1.0)\n' +
+                    '/maxtokens [value] - Get/set max tokens (1-4096)\n' +
+                    '/settings - Show all current settings\n' +
+                    '/clear - Clear conversation\n' +
+                    '/help - Show this help message\n\n' +
+                    'Tips:\n' +
+                    '• Click on your message to edit it\n' +
+                    '• Click on assistant message to regenerate\n' +
+                    '• Ctrl+Shift+N for new conversation'
+                );
+                return true;
+            }
+            return false;
+        }
+
+        // ============================================
+        // Send Message
+        // ============================================
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message || isGenerating) return;
+
+            // Handle slash commands
+            if (message.startsWith('/')) {
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                handleSlashCommand(message);
+                return;
+            }
+
+            if (!isConnected) {
+                addMessage('console', 'Error: Not connected to the engine. Please ensure engine.py is running.');
+                return;
+            }
+
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            const userMessageIndex = messages.length;
+            messages.push({ role: 'user', content: message });
+            addMessage('user', message, userMessageIndex);
+
+            await generateAssistantResponse();
+        }
+
+        // ============================================
+        // Health Check
+        // ============================================
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy' && data.model_loaded) {
+                    updateStatus(true, `Connected: ${data.model} on ${data.device}`);
+                    sendButton.disabled = !chatInput.value.trim();
+                    chatInput.disabled = false;
+                    return true;
+                } else {
+                    updateStatus(false, 'Model not loaded');
+                    return false;
+                }
+            } catch (error) {
+                updateStatus(false, 'Cannot connect to engine');
+                console.error('Health check failed:', error);
+                return false;
+            }
+        }
+
+        // ============================================
+        // Initialization
+        // ============================================
+        async function init() {
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            
+            const connected = await checkHealth();
+            
+            if (!connected) {
+                hideWelcomeMessage();
+                addMessage('console', 
+                    'Engine not running!\n\n' +
+                    'To start the engine:\n' +
+                    '1. Install dependencies: pip install torch transformers fastapi uvicorn\n' +
+                    '2. Run: python engine.py\n' +
+                    '3. Wait for model to load\n' +
+                    '4. Refresh this page'
+                );
+            }
+            
+            chatInput.focus();
+            
+            // Periodic health check
+            setInterval(checkHealth, 10000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
