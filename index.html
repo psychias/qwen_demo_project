@@ -319,8 +319,8 @@
     <div class="chat-container" id="chatContainer">
         <div class="chat-wrapper" id="chatWrapper">
             <div class="welcome-message" id="welcomeMessage">
-                <h2>👋 Welcome to your own custom LLM</h2>
-                <p>Powered by Qwen1.5-0.5B</p>
+                <h2>👋 Welcome to NanoChat</h2>
+                <p>Powered by Qwen1.5-4B</p>
                 <p style="font-size: 0.875rem; margin-top: 1rem;">Type a message to start chatting, or use /help for commands</p>
             </div>
         </div>
@@ -346,9 +346,9 @@
 
     <script>
         // ============================================
-        // CONFIGURATION - Update this to match your server
+        // CONFIGURATION - Uses same origin (empty string = relative URL)
         // ============================================
-        const API_URL = 'http://localhost:8000';
+        const API_URL = '/proxy/8000';
         
         // ============================================
         // DOM Elements
