@@ -26,19 +26,13 @@ The first run will download the model (~8GB). This may take several minutes depe
 
 ### 3. Open the Chat Interface
 
-Open `index.html` in your browser, or serve it:
+Once the engine is running, simply open your browser and navigate to:
 
-```bash
-# Option 1: Simple Python server
-python -m http.server 3000
-
-# Option 2: Open directly (may have CORS issues in some browsers)
-open index.html  # macOS
-xdg-open index.html  # Linux
-start index.html  # Windows
+```
+http://localhost:8000
 ```
 
-Then navigate to `http://localhost:3000`
+The FastAPI server automatically serves both the backend API and the frontend HTML. No additional server needed!
 
 ## 📁 Project Structure
 
@@ -141,9 +135,10 @@ curl -X POST http://localhost:8000/chat/completions \
 - This is expected; GPU is strongly recommended
 - Try a smaller model like `Qwen1.5-0.5B-Chat`
 
-### CORS errors
-- Serve `index.html` via HTTP server instead of opening directly
-- Use `python -m http.server 3000`
+### Port already in use
+- Another process is using port 8000
+- Stop any running `python -m http.server` or other servers
+- Or change the port in `engine.py` (line 249)
 
 ## 📝 License
 

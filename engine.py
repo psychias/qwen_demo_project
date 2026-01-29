@@ -44,7 +44,7 @@ class ChatCompletionRequest(BaseModel):
     temperature: Optional[float] = 0.8
     top_k: Optional[int] = 50
     top_p: Optional[float] = 0.9
-    max_tokens: Optional[int] = 512
+    max_tokens: Optional[int] = 12
     stream: Optional[bool] = True
 
 
